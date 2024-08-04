@@ -184,7 +184,8 @@ export class S3FileHandlerStack extends cdk.Stack {
             createUploadPresignedUrlFunctionURL.url,
           createDownloadPresignedUrlFunctionURL:
             createDownloadPresignedUrlFunctionURL.url,
-          fileBucketUrl: `https://${fileBucket.bucketName}.s3.amazonaws.com`,
+          fileBucketUrl: `https://${fileBucket.bucketName}.s3.${this.region}.amazonaws.com`,
+          cloudfrontUrl: cloudfrontUrl,
         }),
       ],
       destinationBucket: frontendBucket,

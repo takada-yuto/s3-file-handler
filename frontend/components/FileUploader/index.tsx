@@ -1,10 +1,11 @@
 "use client"
-import { FC, useCallback } from "react"
+import { FC, useCallback, useEffect } from "react"
 import { useDropzone } from "react-dropzone"
 interface Env {
   createUploadPresignedUrlFunctionURL: string
   createDownloadPresignedUrlFunctionURL: string
   fileBucketUrl: string
+  cloudfrontUrl: string
 }
 type Props = {
   onFileUpload: ({
@@ -18,8 +19,23 @@ type Props = {
 }
 
 export const FileUploader: FC<Props> = ({ onFileUpload, env }) => {
+  useEffect(() => {
+    const fetchData = async () => {
+      const response = await fetch("/api/env")
+      if (!response.ok) {
+        throw new Error("Network response was not ok")
+      }
+      const data = await response.json()
+      console.log("data", data)
+    }
+
+    fetchData()
+  }, [])
   const onDrop = useCallback(
     async (acceptedFiles: File[]) => {
+      const envResponse = await fetch("/env.json")
+      const data = await envResponse.json()
+      console.log(data)
       const file = acceptedFiles[0]
       const now = new Date(
         new Date().toLocaleString("en-US", { timeZone: "Asia/Tokyo" })

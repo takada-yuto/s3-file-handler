@@ -4,6 +4,7 @@ interface Env {
   createUploadPresignedUrlFunctionURL: string
   createDownloadPresignedUrlFunctionURL: string
   fileBucketUrl: string
+  cloudfrontUrl: string
 }
 
 const fetcher = async () => {
