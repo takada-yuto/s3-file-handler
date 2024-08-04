@@ -26,24 +26,20 @@ const getPresignedUrl = async (
 export const handler = async (event) => {
   // const id = event.arguments.id
   console.log(event)
-  const file_name = event["body"]["fileName"]
-  console.log(file_name)
   const body = event.body
   console.log(body)
   let fileName: string | undefined
-  try {
-    // JSON文字列をパースしてオブジェクトに変換
-    const parsedBody = JSON.parse(body)
+  let currentTime: string | undefined
 
-    // fileNameプロパティが存在するかチェック
-    if (parsedBody && typeof parsedBody.fileName === "string") {
-      fileName = parsedBody.fileName
-    } else {
-      throw new Error("Invalid fileName property")
+  try {
+    const { fileName: fn, currentTime: ct } = JSON.parse(body)
+    if (typeof fn !== "string" || typeof ct !== "string") {
+      throw new Error("Invalid properties")
     }
+    fileName = fn
+    currentTime = ct
   } catch (error) {
-    console.error("Failed to parse body or retrieve fileName:", error)
-    fileName = undefined
+    console.error("Failed to parse body or retrieve properties:", error)
   }
   const { REGION, BUCKET, EXPIRES_IN } = process.env
 
@@ -52,17 +48,16 @@ export const handler = async (event) => {
   }
 
   const expiresIn = Number(EXPIRES_IN)
-  // const key = `files/${id}/${file_name}`
-  const key = `files/${fileName}`
+  const filePath = `files/${currentTime}/${fileName}`
   console.log(BUCKET)
   console.log(expiresIn)
-  console.log(key)
+  console.log(filePath)
 
-  const url = await getPresignedUrl(BUCKET, key, expiresIn)
+  const url = await getPresignedUrl(BUCKET, filePath, expiresIn)
 
   return {
     bucket: BUCKET,
-    key: `https://${key}`,
+    filePath: filePath,
     presignedUrl: url,
   }
 }

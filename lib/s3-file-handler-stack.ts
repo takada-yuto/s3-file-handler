@@ -19,7 +19,7 @@ export class S3FileHandlerStack extends cdk.Stack {
       autoDeleteObjects: true,
       publicReadAccess: true,
       blockPublicAccess: BlockPublicAccess.BLOCK_ACLS,
-      // cors: [ // バケット分ける場合
+      // cors: [ // バケット分けない場合
       //   {
       //     allowedHeaders: ["*"],
       //     allowedMethods: [HttpMethods.GET, HttpMethods.PUT],
@@ -44,7 +44,7 @@ export class S3FileHandlerStack extends cdk.Stack {
       cors: [
         {
           allowedHeaders: ["*"],
-          allowedMethods: [HttpMethods.GET, HttpMethods.PUT],
+          allowedMethods: [HttpMethods.GET, HttpMethods.PUT, HttpMethods.HEAD],
           allowedOrigins: ["*"],
         },
       ],
@@ -96,13 +96,13 @@ export class S3FileHandlerStack extends cdk.Stack {
       createUploadPresignedUrlLambda.addFunctionUrl({
         authType: cdk.aws_lambda.FunctionUrlAuthType.NONE,
         cors: {
-          allowedOrigins: ["*"], // 必要に応じて、特定のオリジンに制限
+          allowedOrigins: ["*"],
           allowedMethods: [
             cdk.aws_lambda.HttpMethod.GET,
             cdk.aws_lambda.HttpMethod.POST,
             cdk.aws_lambda.HttpMethod.PUT,
-          ], // 使用するHTTPメソッドを指定
-          allowedHeaders: ["*"], // 必要に応じて、特定のヘッダーに制限
+          ],
+          allowedHeaders: ["*"],
         },
       })
     const createDownloadPresignedUrlLambda =
@@ -181,6 +181,7 @@ export class S3FileHandlerStack extends cdk.Stack {
             createUploadPresignedUrlFunctionURL.url,
           createDownloadPresignedUrlFunctionURL:
             createDownloadPresignedUrlFunctionURL.url,
+          fileBucketUrl: `https://${fileBucket.bucketName}.s3.amazonaws.com`,
         }),
       ],
       destinationBucket: frontendBucket,

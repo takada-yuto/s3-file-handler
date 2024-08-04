@@ -3,6 +3,7 @@ import useSWR from "swr"
 interface Env {
   createUploadPresignedUrlFunctionURL: string
   createDownloadPresignedUrlFunctionURL: string
+  fileBucketUrl: string
 }
 
 const fetcher = async () => {

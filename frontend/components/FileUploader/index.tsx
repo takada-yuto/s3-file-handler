@@ -1,11 +1,10 @@
 "use client"
-import useEnv from "@/lib/useEnv"
-import { FC, useCallback, useEffect, useState } from "react"
+import { FC, useCallback } from "react"
 import { useDropzone } from "react-dropzone"
-import { v4 as uuid } from "uuid"
 interface Env {
   createUploadPresignedUrlFunctionURL: string
   createDownloadPresignedUrlFunctionURL: string
+  fileBucketUrl: string
 }
 type Props = {
   onFileUpload: ({
@@ -19,114 +18,31 @@ type Props = {
 }
 
 export const FileUploader: FC<Props> = ({ onFileUpload, env }) => {
-  // const [url, setUrl] = useState<string | undefined>(undefined)
-  // const [file, setFile] = useState<File | null>(null)
-  // const [createUploadPresignedUrl] = useCreateUploadPresignedUrlMutation()
-  // const [createDownloadPresignedUrl] = useCreateDownloadPresignedUrlMutation()
-  // const [audToTxt] = useAudToTxtMutation()
-  // const uploadFile = async (
-  //   putData: PresignedUrl,
-  //   getData: PresignedUrl,
-  //   file: File
-  // ) => {
-  //   console.log(putData)
-  //   console.log(file)
-  //   const fileUploadResponse = await fetch(putData.presignedUrl, {
-  //     method: "PUT",
-  //     headers: {
-  //       "Content-Type": file.type,
-  //     },
-  //     body: file,
-  //   })
-  //   console.log(fileUploadResponse)
-  //   console.log(getData.presignedUrl)
-  //   const { data: audData } = await audToTxt({
-  //     variables: { presignedUrl: getData.presignedUrl },
-  //   })
-  //   console.log(audData)
-  //   // const fileDownloadResponse = await fetch(getData.presignedUrl, {
-  //   //   method: "GET",
-  //   //   headers: {
-  //   //     "Content-Type": file.type,
-  //   //   },
-  //   // })
-  //   // console.log(fileDownloadResponse)
-  //   // const blob = await fileDownloadResponse.blob()
-  //   // console.log(blob)
-  // }
-  // const { env } = useEnv()
-  const [createDownloadPresignedUrlFunctionURL, setCloudfrontUrl] = useState("")
-  const [downloadUrl, setDownloadUrl] = useState("")
-  const [fileName, setFileName] = useState("")
-  const download = async (url: string, fileName: string | undefined) => {
-    const downloadResponse = await fetch(url, {
-      method: "PUT",
-      body: JSON.stringify({
-        fileName: fileName,
-      }),
-    })
-    console.log(`downloadResponse: ${downloadResponse}`)
-    const downloadResult = await downloadResponse.json()
-    console.log(`downloadResult: ${downloadResult}`)
-    console.log(`downloadResult.presignedUrl: ${downloadResult.presignedUrl}`)
-    const downloadResultResponse = await fetch(downloadResult.presignedUrl)
-    console.log(`downloadResultResponse: ${downloadResultResponse}`)
-    console.log(`downloadResultResponse: ${downloadResultResponse}`)
-    const blob = await downloadResultResponse.blob()
-    // const indexResponse = await fetch(result.key)
-    // console.log(`indexResponse: ${indexResponse}`)
-    // const blob = await indexResponse.blob()
-
-    // BlobをObject URLに変換
-    const audioObjectUrl = URL.createObjectURL(blob)
-    console.log(`audioObjectUrl: ${audioObjectUrl}`)
-
-    // const url = URL.createObjectURL(selectedFile)
-    const link = document.createElement("a")
-    link.href = audioObjectUrl
-    link.download = fileName as string
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    URL.revokeObjectURL(audioObjectUrl)
-  }
-
   const onDrop = useCallback(
     async (acceptedFiles: File[]) => {
       const file = acceptedFiles[0]
-      console.log(acceptedFiles)
-      console.log(file.name)
-      const guid = uuid()
-      // try {
-      //   const { data: putData } = await createUploadPresignedUrl({
-      //     variables: { filename: file.name, id: guid },
-      //   })
+      const now = new Date(
+        new Date().toLocaleString("en-US", { timeZone: "Asia/Tokyo" })
+      )
 
-      //   const { data: getData } = await createDownloadPresignedUrl({
-      //     variables: { filename: file.name, id: guid },
-      //   })
-      //   console.log(putData)
-      //   console.log(getData)
-      //   await uploadFile(
-      //     putData!.createUploadPresignedUrl!,
-      //     getData!.createDownloadPresignedUrl!,
-      //     file
-      //   )
-      // } catch (error) {
-      //   console.log(error)
-      // }
-      console.log(`env: ${env}`)
-      setCloudfrontUrl(env?.createUploadPresignedUrlFunctionURL!)
-      // const response = await fetch(env?.createUploadPresignedUrlFunctionURL!)
+      const pad = (num: number) => String(num).padStart(2, "0")
+      const currentTime = `${now.getFullYear()}-${pad(
+        now.getMonth() + 1
+      )}-${pad(now.getDate())}-${pad(now.getHours())}${pad(
+        now.getMinutes()
+      )}${pad(now.getSeconds())}`
+
+      console.log(currentTime)
+      console.log(file.type)
+      console.log(file.name)
       const response = await fetch(env?.createUploadPresignedUrlFunctionURL!, {
         method: "PUT",
         body: JSON.stringify({
           fileName: file.name,
+          currentTime: currentTime,
         }),
       })
-      console.log(`response: ${response}`)
       const result = await response.json()
-      console.log(`result: ${result}`)
       console.log(`result.presignedUrl: ${result.presignedUrl}`)
       const uploadResponse = await fetch(result.presignedUrl, {
         method: "PUT",
@@ -135,76 +51,58 @@ export const FileUploader: FC<Props> = ({ onFileUpload, env }) => {
         },
         body: file,
       })
-      console.log(`uploadResponse: ${uploadResponse}`)
-      setDownloadUrl(env?.createDownloadPresignedUrlFunctionURL!)
-      setFileName(file.name)
-      // const uploadResponseResult = await uploadResponse.json()
-      // console.log(`uploadResponseResult: ${uploadResponseResult}`)
 
-      // const downloadResponse = await fetch(
-      //   env?.createDownloadPresignedUrlFunctionURL!,
-      //   {
-      //     method: "PUT",
-      //     body: JSON.stringify({
-      //       fileName: file.name,
-      //     }),
-      //   }
-      // )
-      // console.log(`downloadResponse: ${downloadResponse}`)
-      // const downloadResult = await downloadResponse.json()
-      // console.log(`downloadResult: ${downloadResult}`)
-      // console.log(`downloadResult.presignedUrl: ${downloadResult.presignedUrl}`)
-      // const downloadResultResponse = await fetch(downloadResult.presignedUrl)
-      // console.log(`downloadResultResponse: ${downloadResultResponse}`)
-      // console.log(`downloadResultResponse: ${downloadResultResponse}`)
+      const bucketUrl = `${env?.fileBucketUrl}/${result.filePath}`
+
+      // S3にファイルが存在するか確認
+      const checkFileExists = async (retries = 5) => {
+        for (let i = 0; i < retries; i++) {
+          const headResponse = await fetch(bucketUrl, { method: "HEAD" })
+          if (headResponse.ok) {
+            return true
+          }
+          await new Promise((resolve) => setTimeout(resolve, 1000)) // 1秒待つ
+        }
+        return false
+      }
+
+      const fileExists = await checkFileExists()
+      if (!fileExists) {
+        throw new Error("File not uploaded to S3 in time")
+      }
+
+      const downloadResponse = await fetch(
+        env?.createDownloadPresignedUrlFunctionURL!,
+        {
+          method: "PUT",
+          body: JSON.stringify({
+            fileName: file.name,
+            currentTime: currentTime,
+          }),
+        }
+      )
+      const downloadResult = await downloadResponse.json()
+      console.log(`downloadResult.presignedUrl: ${downloadResult.presignedUrl}`)
+      const downloadResultResponse = await fetch(downloadResult.presignedUrl)
+      const blob = await downloadResultResponse.blob()
+
+      // バケット分けない場合
+      // const downloadResultResponse = await fetch(result.filePath)
       // const blob = await downloadResultResponse.blob()
-      // // const indexResponse = await fetch(result.key)
-      // // console.log(`indexResponse: ${indexResponse}`)
-      // // const blob = await indexResponse.blob()
 
-      // // BlobをObject URLに変換
-      // const audioObjectUrl = URL.createObjectURL(blob)
-      // console.log(`audioObjectUrl: ${audioObjectUrl}`)
+      const downloadUrl = URL.createObjectURL(blob)
+      console.log(`downloadUrl: ${downloadUrl}`)
 
-      // // const url = URL.createObjectURL(selectedFile)
-      // const link = document.createElement("a")
-      // link.href = audioObjectUrl
-      // link.download = file.name
-      // document.body.appendChild(link)
-      // link.click()
-      // document.body.removeChild(link)
-      // URL.revokeObjectURL(audioObjectUrl)
+      const link = document.createElement("a")
+      link.href = downloadUrl
+      link.download = file.name
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(downloadUrl)
     },
     [onFileUpload]
   )
-
-  // これをベースにする
-  // useEffect(() => {
-  //   const uploadFile = async () => {
-  //     if (url && file) {
-  //       // URLとファイルが設定されている場合に実行
-  //       try {
-  //         const fileUploadResponse = await fetch(url, {
-  //           method: "PUT",
-  //           body: file, // FormDataではなくファイルだけをアップロード
-  //           headers: {
-  //             "Access-Control-Allow-Origin": "*",
-  //             "Content-Type": file.type, // 必要に応じてコンテンツタイプを設定
-  //           },
-  //         })
-
-  //         if (fileUploadResponse.ok) {
-  //           console.log("File uploaded successfully")
-  //         } else {
-  //           console.error("File upload failed", fileUploadResponse.statusText)
-  //         }
-  //       } catch (error) {
-  //         console.error("Error uploading file:", error)
-  //       }
-  //     }
-  //   }
-  //   uploadFile()
-  // }, [url, file])
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop })
 
@@ -223,7 +121,6 @@ export const FileUploader: FC<Props> = ({ onFileUpload, env }) => {
         }}
       >
         <input {...getInputProps()} />
-        {/* <FontAwesomeIcon icon={faUpload} style={{ fontSize: 50 }} /> */}
         {isDragActive ? (
           <p className="text-center p-3 m-0">ここにファイルをドロップ</p>
         ) : (
@@ -232,15 +129,6 @@ export const FileUploader: FC<Props> = ({ onFileUpload, env }) => {
             <br />
             またはクリックでファイルを選択
           </p>
-        )}
-      </div>
-      <div>
-        {downloadUrl ? (
-          <button onClick={() => download(downloadUrl, fileName)}>
-            Download Audio
-          </button>
-        ) : (
-          ""
         )}
       </div>
     </>
