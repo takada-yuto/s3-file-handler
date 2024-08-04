@@ -26,6 +26,15 @@ const getPresignedUrl = async (
 export const handler = async (event) => {
   // const id = event.arguments.id
   console.log(event)
+  const { REGION, BUCKET, EXPIRES_IN, CLOUDFRONT_URL } = process.env
+  const origin = event.headers.origin || event.headers.Origin
+
+  if (!origin || !origin.includes(CLOUDFRONT_URL)) {
+    return {
+      statusCode: 403,
+      body: JSON.stringify({ message: "Forbidden" }),
+    }
+  }
   const body = event.body
   console.log(body)
   let fileName: string | undefined
@@ -41,7 +50,6 @@ export const handler = async (event) => {
   } catch (error) {
     console.error("Failed to parse body or retrieve properties:", error)
   }
-  const { REGION, BUCKET, EXPIRES_IN } = process.env
 
   if (!REGION || !BUCKET || !EXPIRES_IN || isNaN(Number(EXPIRES_IN))) {
     throw new Error("invalid environment values")

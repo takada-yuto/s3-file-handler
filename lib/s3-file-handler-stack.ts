@@ -71,6 +71,35 @@ export class S3FileHandlerStack extends cdk.Stack {
     frontendBucket.grantPut(iamRoleForLambda)
     frontendBucket.grantRead(iamRoleForLambda)
 
+    const cdkTemplateOAI = new OriginAccessIdentity(
+      this,
+      "CdkTemplateFrontendOAI"
+    )
+    frontendBucket.grantRead(cdkTemplateOAI)
+    fileBucket.grantRead(cdkTemplateOAI)
+
+    const distribution = new CloudFrontWebDistribution(
+      this,
+      "CdkTemplateFrontendWebDestribution",
+      {
+        originConfigs: [
+          {
+            s3OriginSource: {
+              s3BucketSource: frontendBucket,
+              originAccessIdentity: cdkTemplateOAI,
+            },
+            behaviors: [
+              {
+                isDefaultBehavior: true,
+              },
+            ],
+          },
+        ],
+      }
+    )
+
+    const cloudfrontUrl = `https://${distribution.distributionDomainName}`
+
     const createUploadPresignedUrlLambda =
       new cdk.aws_lambda_nodejs.NodejsFunction(
         this,
@@ -85,6 +114,7 @@ export class S3FileHandlerStack extends cdk.Stack {
             // BUCKET: frontendBucket.bucketName,
             BUCKET: fileBucket.bucketName, // バケット分けて保存する場合
             EXPIRES_IN: "3600",
+            CLOUDFRONT_URL: cloudfrontUrl,
           },
         }
       )
@@ -119,6 +149,7 @@ export class S3FileHandlerStack extends cdk.Stack {
             // BUCKET: frontendBucket.bucketName,
             BUCKET: fileBucket.bucketName, // バケット分けて保存する場合
             EXPIRES_IN: "3600",
+            CLOUDFRONT_URL: cloudfrontUrl,
           },
         }
       )
@@ -140,34 +171,6 @@ export class S3FileHandlerStack extends cdk.Stack {
         },
       })
 
-    const cdkTemplateOAI = new OriginAccessIdentity(
-      this,
-      "CdkTemplateFrontendOAI"
-    )
-    frontendBucket.grantRead(cdkTemplateOAI)
-    fileBucket.grantRead(cdkTemplateOAI)
-
-    const distribution = new CloudFrontWebDistribution(
-      this,
-      "CdkTemplateFrontendWebDestribution",
-      {
-        originConfigs: [
-          {
-            s3OriginSource: {
-              s3BucketSource: frontendBucket,
-              originAccessIdentity: cdkTemplateOAI,
-            },
-            behaviors: [
-              {
-                isDefaultBehavior: true,
-              },
-            ],
-          },
-        ],
-      }
-    )
-
-    const cloudfrontUrl = `https://${distribution.distributionDomainName}`
     // CloudFrontディストリビューションのドメイン名を出力
     new cdk.CfnOutput(this, "cloudfrontUrl", {
       value: cloudfrontUrl,
